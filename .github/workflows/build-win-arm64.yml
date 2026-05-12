@@ -142,7 +142,7 @@ jobs:
           out_name=clownmdemu-win-arm64-${{ needs.build-tag.outputs.github_tag }}
           cd build
           7z a $out_name.7z clownmdemu.exe LICENSE
-          mv $out_name.7z ../artifacts/
+          mkdir ../artifacts/ && mv $out_name.7z ../artifacts/
       - name: Upload
         uses: actions/upload-artifact@v7
         with:
