@@ -85,7 +85,8 @@ jobs:
       working-directory: ./releases
       run: |
         gh release create "${{ inputs.github_tag }}" \
-          '*.7z'
+          '*.7z' \
+          '*.exe' \
           '*.sha256' \
           --title 'Autobuild - ClownMDEmu ${{ inputs.github_tag }}' \
           --notes-file notes.md \
