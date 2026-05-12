@@ -75,7 +75,7 @@ jobs:
           target: ["msys2"]
     defaults:
       run:
-        shell: bash
+        shell: msys2 {0}
     env:
       CCACHE_DIR: ${{ github.workspace }}/.ccache
       CCACHE_COMPILERCHECK: content
@@ -96,7 +96,6 @@ jobs:
           pacboy:
             7zip:p cmake:p gcc-compat:p libsndfile:p libusb:p libpng:p harfbuzz:p rcedit:p
       - name: Checkout Source
-        shell: msys2 {0}
         run: |
           git clone --branch ${{ inputs.github_tag }} --single-branch --recurse-submodules https://github.com/Clownacy/clownmdemu-frontend
       - name: Build (MSYS2)
@@ -122,7 +121,6 @@ jobs:
             -DCLOWNMDEMU_FRONTEND_FREETYPE=ON
           cmake --build build
       - name: Resource strings
-        shell: msys2 {0}
         working-directory: ./clownmdemu-frontend
         run: |
           target="build/clownmdemu.exe"
@@ -139,6 +137,7 @@ jobs:
         run: |
           cp LICENCE.txt build/LICENSE
       - name: Pack
+        working-directory: ./clownmdemu-frontend
         run: |
           out_name=clownmdemu-win-arm64-${{ needs.build-tag.outputs.github_tag }}
           cd build
