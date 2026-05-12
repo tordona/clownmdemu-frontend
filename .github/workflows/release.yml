@@ -45,13 +45,13 @@ jobs:
       run: |
         releases_endpoint="https://github.com/Clownacy/clownmdemu-frontend/"
         filename="${{ inputs.github_tag }}.zip"
-        url="$releases_endpoint/archive/refs/tags/"
+        url="$releases_endpointarchive/refs/tags/"
 
         echo "## Windows ARM64 Builds" >> notes.md
         echo "" >> notes.md
         echo "Automated builds based on official source" >> notes.md
         echo "" >> notes.md
-        echo "Download \`7z\` archive and unpack. Run \`clownmdemu.exe\'" >> notes.md
+        echo "No installer. Download \`7z\` archive, unpack, run \`clownmdemu.exe\`" >> notes.md
         echo "" >> notes.md
         echo "**Source Code**" >> notes.md
         echo "[$filename]($url$filename)" >> notes.md
