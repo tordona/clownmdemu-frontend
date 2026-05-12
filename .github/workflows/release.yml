@@ -78,7 +78,6 @@ jobs:
       run: |
         gh release upload "${{ inputs.github_tag }}" \
           '*.7z' \
-          '*.exe' \
           '*.sha256' \
           --clobber \
     - name: 'Create New Package Release'

@@ -75,7 +75,7 @@ jobs:
           target: ["msys2"]
     defaults:
       run:
-        shell: bash
+        shell: msys2 {0}
     env:
       CCACHE_DIR: ${{ github.workspace }}/.ccache
       CCACHE_COMPILERCHECK: content
@@ -83,12 +83,6 @@ jobs:
       OS: windows
       TARGET: ${{ matrix.target }}
     steps:
-      - name: Checkout Source
-        uses: actions/checkout@v4
-        with:
-          repository: clownacy/clownmdemu-frontend
-          submodules: true
-          ref: ${inputs.github_tag}
       - name: Setup MSYS2
         if: ${{ matrix.target == 'msys2' }}
         uses: msys2/setup-msys2@v2
@@ -101,6 +95,9 @@ jobs:
             git gcc
           pacboy:
             7zip:p cmake:p gcc-compat:p libsndfile:p libusb:p libpng:p harfbuzz:p rcedit:p
+      - name: Checkout Source
+        run: |
+          git clone --branch ${{ inputs.github_tag }} --single-branch --recurse-submodules https://github.com/Clownacy/clownmdemu-frontend
       - name: Build (MSYS2)
         if: ${{ matrix.target == 'msys2' }}
         shell: msys2 {0}
@@ -123,7 +120,7 @@ jobs:
             -DCMAKE_BUILD_TYPE="RELEASE" \
             -DCLOWNMDEMU_FRONTEND_FREETYPE=ON
           cmake --build build
-      - name: Resource strings
+      - name: Resource Strings
         working-directory: ./clownmdemu-frontend
         run: |
           target="build/clownmdemu.exe"
@@ -135,22 +132,22 @@ jobs:
           rcedit.exe $target --set-file-version "${file_version}"
           rcedit.exe $target --set-version-string "ProductName" "${product_name}"
           rcedit.exe $target --set-version-string "ProductVersion" "${product_version}"
-      - name: Copy license file
+      - name: Copy License File
         working-directory: ./clownmdemu-frontend
         run: |
-          cp LICENSE.txt build/LICENSE
+          cp LICENCE.txt build/LICENSE
       - name: Pack
-        working-directory: ./${{ steps.reference-name.outputs.name }}
+        working-directory: ./clownmdemu-frontend
         run: |
           out_name=clownmdemu-win-arm64-${{ needs.build-tag.outputs.github_tag }}
           cd build
-          7z a $out_name.7z $clownmdemu.exe LICENSE
-          mv $out_name.7z ../artifacts/
+          7z a $out_name.7z clownmdemu.exe LICENSE
+          mkdir ../../artifacts/ && mv $out_name.7z ../../artifacts/
       - name: Upload
         uses: actions/upload-artifact@v7
         with:
           name: ${{ env.OS }}-${{ env.TARGET }}
-          path: ./clownmdemu-frontend/artifacts/
+          path: ./artifacts/
   make-release:
     name: 'Make Release'
     needs: ['build-tag', 'windows-arm']
