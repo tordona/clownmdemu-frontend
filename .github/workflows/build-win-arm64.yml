@@ -140,7 +140,7 @@ jobs:
       - name: Copy license file
         working-directory: ./clownmdemu-frontend
         run: |
-          cp LICENSE.txt build/LICENSE
+          cp LICENCE.txt build/LICENSE
       - name: Pack
         run: |
           out_name=clownmdemu-win-arm64-${{ needs.build-tag.outputs.github_tag }}
