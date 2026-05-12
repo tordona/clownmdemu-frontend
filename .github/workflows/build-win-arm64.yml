@@ -98,8 +98,7 @@ jobs:
       - name: Checkout Source
         shell: msys2 {0}
         run: |
-          git clone --recursive https://github.com/Clownacy/clownmdemu-frontend/
-          git checkout ${{ inputs.github_tag }}
+          git clone -branch ${{ inputs.github_tag }} --single-branch --recurse-submodules https://github.com/Clownacy/clownmdemu-frontend
       - name: List Source
         run: |
           ls -laR
