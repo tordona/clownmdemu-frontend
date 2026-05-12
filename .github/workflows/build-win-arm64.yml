@@ -91,7 +91,8 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.github_tag }}
       - name: List Source
-        
+        run: |
+          ls -laR
       - name: Setup MSYS2
         if: ${{ matrix.target == 'msys2' }}
         uses: msys2/setup-msys2@v2
