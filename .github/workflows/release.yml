@@ -43,7 +43,7 @@ jobs:
     - name: 'Create Notes File'
       working-directory: ./releases
       run: |
-        releases_endpoint="https://github.com/Clownacy/clownmdemu-frontend/"
+        releases_endpoint="https://github.com/Clownacy/clownmdemu-frontend"
         filename="${{ inputs.github_tag }}.zip"
         url="$releases_endpoint/archive/refs/tags/"
 
@@ -51,7 +51,7 @@ jobs:
         echo "" >> notes.md
         echo "Automated builds based on official source" >> notes.md
         echo "" >> notes.md
-        echo "Download \`7z\` archive and unpack" >> notes.md
+        echo "No installer. Download \`7z\` archive, unpack, run \`clownmdemu.exe\`" >> notes.md
         echo "" >> notes.md
         echo "**Source Code**" >> notes.md
         echo "[$filename]($url$filename)" >> notes.md
@@ -86,7 +86,6 @@ jobs:
       run: |
         gh release create "${{ inputs.github_tag }}" \
           '*.7z' \
-          '*.exe' \
           '*.sha256' \
           --title 'Autobuild - ClownMDEmu ${{ inputs.github_tag }}' \
           --notes-file notes.md \

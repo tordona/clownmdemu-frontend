@@ -1,7 +1,8 @@
-name: Autobuild ClownMDEmu Windows ARM64
+name: Autobuild ClownMDEmu
+
 on:
-  # schedule:
-    # - cron: '0 12 * * *' 
+  schedule:
+    - cron: '15 12 * * *' 
   workflow_dispatch:
     inputs:
       github_tag:
