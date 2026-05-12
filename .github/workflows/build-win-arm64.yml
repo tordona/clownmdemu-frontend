@@ -104,7 +104,6 @@ jobs:
       - name: Build (MSYS2)
         if: ${{ matrix.target == 'msys2' }}
         shell: msys2 {0}
-        working-directory: ./clownmdemu-frontend
         run: |
           insertion_point=5
           sed -i "${insertion_point}a\set(CMAKE_FIND_LIBRARY_SUFFIXES \".a\")" CMakeLists.txt
@@ -124,7 +123,7 @@ jobs:
             -DCLOWNMDEMU_FRONTEND_FREETYPE=ON
           cmake --build build
       - name: Resource strings
-        working-directory: ./clownmdemu-frontend
+        shell: msys2 {0}
         run: |
           target="build/clownmdemu.exe"
           file_desc="Sega Mega Drive / Sega Genesis emulator"
@@ -136,11 +135,9 @@ jobs:
           rcedit.exe $target --set-version-string "ProductName" "${product_name}"
           rcedit.exe $target --set-version-string "ProductVersion" "${product_version}"
       - name: Copy license file
-        working-directory: ./clownmdemu-frontend
         run: |
           cp LICENSE.txt build/LICENSE
       - name: Pack
-        working-directory: ./${{ steps.reference-name.outputs.name }}
         run: |
           out_name=clownmdemu-win-arm64-${{ needs.build-tag.outputs.github_tag }}
           cd build
@@ -150,7 +147,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: ${{ env.OS }}-${{ env.TARGET }}
-          path: ./clownmdemu-frontend/artifacts/
+          path: ./artifacts/
   make-release:
     name: 'Make Release'
     needs: ['build-tag', 'windows-arm']
