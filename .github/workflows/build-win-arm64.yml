@@ -2,7 +2,7 @@ name: Autobuild ClownMDEmu
 
 on:
   schedule:
-    - cron: '0 12 * * *' 
+    - cron: '15 12 * * *' 
   workflow_dispatch:
     inputs:
       github_tag:
