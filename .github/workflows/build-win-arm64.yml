@@ -99,9 +99,6 @@ jobs:
         shell: msys2 {0}
         run: |
           git clone --branch ${{ inputs.github_tag }} --single-branch --recurse-submodules https://github.com/Clownacy/clownmdemu-frontend
-      - name: List Source
-        run: |
-          ls -laR
       - name: Build (MSYS2)
         if: ${{ matrix.target == 'msys2' }}
         shell: msys2 {0}
