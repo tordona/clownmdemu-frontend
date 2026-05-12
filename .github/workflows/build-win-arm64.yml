@@ -89,6 +89,9 @@ jobs:
           repository: clownacy/clownmdemu-frontend
           submodules: true
           ref: ${{ inputs.github_tag }}
+      - name: List Source
+        run: |
+          ls -laR
       - name: Setup MSYS2
         if: ${{ matrix.target == 'msys2' }}
         uses: msys2/setup-msys2@v2
@@ -105,6 +108,7 @@ jobs:
         if: ${{ matrix.target == 'msys2' }}
         shell: msys2 {0}
         run: |
+          ls -laR
           insertion_point=5
           sed -i "${insertion_point}a\set(CMAKE_FIND_LIBRARY_SUFFIXES \".a\")" CMakeLists.txt
           sed -i "${insertion_point}a\set(BUILD_SHARED_LIBS OFF)" CMakeLists.txt
