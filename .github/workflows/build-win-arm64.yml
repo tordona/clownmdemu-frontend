@@ -1,0 +1,161 @@
+name: Autobuild ClownMDEmu Windows ARM64
+on:
+  # schedule:
+    # - cron: '0 12 * * *' 
+  workflow_dispatch:
+    inputs:
+      github_tag:
+        description: 'Version tag to build'
+        required: false
+        type: string
+
+jobs:
+  build-tag:
+    name: Build Tag
+    runs-on: ubuntu-latest
+    outputs:
+      github_tag: ${{ steps.tag-name.outputs.github_tag }}
+      run: ${{ steps.build-run.outputs.run }}
+    steps:
+      - name: Validate input github_tag
+        if: ${{ inputs.github_tag != '' }}
+        uses: mukunku/tag-exists-action@v1.7.0
+        id: validate-github-tag
+        with: 
+          tag: ${{ inputs.github_tag }}
+          repo: clownacy/clownmdemu-frontend
+      - name: Get ClownMDEmu Latest Tag
+        if: ${{ inputs.github_tag == '' }}
+        id: clownmdemu-latest-tag
+        uses: oprypin/find-latest-tag@v1
+        with:
+          releases-only: true
+          repository: clownacy/clownmdemu-frontend
+      - name: Get Local Latest Tag
+        if: ${{ inputs.github_tag == '' }}
+        id: local-latest-tag
+        uses: oprypin/find-latest-tag@v1
+        with:
+          releases-only: true
+          repository: ${{ github.repository }}
+      - name: Set Tag Name
+        id: tag-name
+        run: |
+          clownmdemu_latest_tag="${{ steps.clownmdemu-latest-tag.outputs.tag || inputs.github_tag }}"
+          echo "github_tag=$clownmdemu_latest_tag" >> $GITHUB_OUTPUT
+      - name: Set Build Run
+        id: build-run
+        run: |
+          echo "Remote Tag: ($clownmdemu_latest_tag)"
+          echo "Local Tag: ($local_latest_tag)"
+          allow_build_run=false
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            if [[ $inputs.github_tag != "" && "${{ steps.validate-github-tag.outputs.exists }}" == "true" ]]; then
+              echo "Manual Workflow Dispatched. Valid Github Release Tag"
+              allow_build_run=true
+            fi
+          fi
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+            clownmdemu_latest_tag="${{ steps.clownmdemu-latest-tag.outputs.tag }}"
+            local_latest_tag="${{ steps.local-latest-tag.outputs.tag }}"
+            if [[ "$clownmdemu_latest_tag" != "$local_latest_tag" ]]; then
+              echo "Scheduled Run. Latest ClownMDEmu Remote Tag is Greater than Local"
+              allow_build_run=true
+            fi
+          fi
+          echo "run=$allow_build_run" >> $GITHUB_OUTPUT
+  windows-arm:
+    name: Windows ARM64
+    needs: ['build-tag']
+    if: needs.build-tag.outputs.run == 'true'
+    runs-on: windows-11-arm
+    strategy:
+      fail-fast: false
+      matrix:
+          target: ["msys2"]
+    defaults:
+      run:
+        shell: bash
+    env:
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      CCACHE_COMPILERCHECK: content
+      CCACHE_SLOPPINESS: time_macros
+      OS: windows
+      TARGET: ${{ matrix.target }}
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+        with:
+          repository: clownacy/clownmdemu-frontend
+          submodules: true
+          ref: ${inputs.github_tag}
+      - name: Setup MSYS2
+        if: ${{ matrix.target == 'msys2' }}
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: clangarm64
+          update: true
+          cache: true
+          release: true
+          install: |
+            git gcc
+          pacboy:
+            7zip:p cmake:p gcc-compat:p libsndfile:p libusb:p libpng:p harfbuzz:p rcedit:p
+      - name: Build (MSYS2)
+        if: ${{ matrix.target == 'msys2' }}
+        shell: msys2 {0}
+        working-directory: ./clownmdemu-frontend
+        run: |
+          insertion_point=5
+          sed -i "${insertion_point}a\set(CMAKE_FIND_LIBRARY_SUFFIXES \".a\")" CMakeLists.txt
+          sed -i "${insertion_point}a\set(BUILD_SHARED_LIBS OFF)" CMakeLists.txt
+          sed -i "${insertion_point}a\set(CMAKE_EXE_LINKER_FLAGS \"-static\")" CMakeLists.txt
+          sed -i "${insertion_point}s/$/\n/" CMakeLists.txt
+
+          echo "" >> CMakeLists.txt
+          echo "target_link_libraries(clownmdemu shlwapi rpcrt4 dwrite winpthread bz2 z)" >> CMakeLists.txt
+          echo "target_link_libraries(clownmdemu brotlidec brotlicommon sndfile FLAC mpg123)" >> CMakeLists.txt
+          echo "target_link_libraries(clownmdemu mp3lame ogg opus vorbis vorbisenc harfbuzz png graphite2)" >> CMakeLists.txt
+
+          cmake \
+            -G Ninja \
+            -B build \
+            -DCMAKE_BUILD_TYPE="RELEASE" \
+            -DCLOWNMDEMU_FRONTEND_FREETYPE=ON
+          cmake --build build
+      - name: Resource strings
+        working-directory: ./clownmdemu-frontend
+        run: |
+          target="build/clownmdemu.exe"
+          file_desc="Sega Mega Drive / Sega Genesis emulator"
+          file_version=$(date '+%Y.%m.%d.0')
+          product_name="ClownMDEmu"
+          product_version="${{ inputs.github_tag }}"
+          rcedit.exe $target --set-version-string "FileDescription" "${file_desc}"
+          rcedit.exe $target --set-file-version "${file_version}"
+          rcedit.exe $target --set-version-string "ProductName" "${product_name}"
+          rcedit.exe $target --set-version-string "ProductVersion" "${product_version}"
+      - name: Copy license file
+        working-directory: ./clownmdemu-frontend
+        run: |
+          cp LICENSE.txt build/LICENSE
+      - name: Pack
+        working-directory: ./${{ steps.reference-name.outputs.name }}
+        run: |
+          out_name=clownmdemu-win-arm64-${{ needs.build-tag.outputs.github_tag }}
+          cd build
+          7z a $out_name.7z $clownmdemu.exe LICENSE
+          mv $out_name.7z ../artifacts/
+      - name: Upload
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.OS }}-${{ env.TARGET }}
+          path: ./clownmdemu-frontend/artifacts/
+  make-release:
+    name: 'Make Release'
+    needs: ['build-tag', 'windows-arm']
+    uses: ./.github/workflows/release.yml
+    permissions:
+      contents: write
+    with:
+      github_tag: ${{ needs.build-tag.outputs.github_tag }}
