@@ -83,16 +83,6 @@ jobs:
       OS: windows
       TARGET: ${{ matrix.target }}
     steps:
-      - name: Checkout Source
-        uses: actions/checkout@v4
-        with:
-          repository: clownacy/clownmdemu-frontend
-          submodules: true
-          fetch-depth: 0
-          ref: ${{ inputs.github_tag }}
-      - name: List Source
-        run: |
-          ls -laR
       - name: Setup MSYS2
         if: ${{ matrix.target == 'msys2' }}
         uses: msys2/setup-msys2@v2
@@ -105,9 +95,18 @@ jobs:
             git gcc
           pacboy:
             7zip:p cmake:p gcc-compat:p libsndfile:p libusb:p libpng:p harfbuzz:p rcedit:p
+      - name: Checkout Source
+        shell: msys2 {0}
+        run: |
+          git clone --recursive https://github.com/Clownacy/clownmdemu-frontend/
+          git checkout ${{ inputs.github_tag }}
+      - name: List Source
+        run: |
+          ls -laR
       - name: Build (MSYS2)
         if: ${{ matrix.target == 'msys2' }}
         shell: msys2 {0}
+        working-directory: ./clownmdemu-frontend
         run: |
           insertion_point=5
           sed -i "${insertion_point}a\set(CMAKE_FIND_LIBRARY_SUFFIXES \".a\")" CMakeLists.txt
@@ -128,6 +127,7 @@ jobs:
           cmake --build build
       - name: Resource strings
         shell: msys2 {0}
+        working-directory: ./clownmdemu-frontend
         run: |
           target="build/clownmdemu.exe"
           file_desc="Sega Mega Drive / Sega Genesis emulator"
@@ -139,6 +139,7 @@ jobs:
           rcedit.exe $target --set-version-string "ProductName" "${product_name}"
           rcedit.exe $target --set-version-string "ProductVersion" "${product_version}"
       - name: Copy license file
+        working-directory: ./clownmdemu-frontend
         run: |
           cp LICENSE.txt build/LICENSE
       - name: Pack
