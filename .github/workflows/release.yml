@@ -78,7 +78,6 @@ jobs:
       run: |
         gh release upload "${{ inputs.github_tag }}" \
           '*.7z' \
-          '*.exe' \
           '*.sha256' \
           --clobber \
     - name: 'Create New Package Release'
@@ -86,8 +85,7 @@ jobs:
       working-directory: ./releases
       run: |
         gh release create "${{ inputs.github_tag }}" \
-          '*.7z' \
-          '*.exe' \
+          '*.7z'
           '*.sha256' \
           --title 'Autobuild - ClownMDEmu ${{ inputs.github_tag }}' \
           --notes-file notes.md \
